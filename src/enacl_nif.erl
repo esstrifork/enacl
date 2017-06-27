@@ -92,6 +92,7 @@
         curve25519_scalarmult/2,
         curve25519_ext_scalarmult_unrestrained/2,
         curve25519_ext_recover_y/1,
+        curve25519_ext_add_or_subtract/2,
 
         mod25519_sqrt/1
 ]).
@@ -182,5 +183,6 @@ curve25519_scalarmult(_N, _Point) -> erlang:nif_error(nif_not_loaded).
 curve25519_ext_scalarmult_unrestrained(_N, _Point) -> erlang:nif_error(nif_not_loaded).
 
 curve25519_ext_recover_y(_X) -> erlang:nif_error(nif_not_loaded).
+curve25519_ext_add_or_subtract(_P, _Q) -> erlang:nif_error(nif_not_loaded).
 
 mod25519_sqrt(_N) -> erlang:nif_error(nif_not_loaded).

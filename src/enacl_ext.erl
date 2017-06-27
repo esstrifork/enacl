@@ -10,6 +10,7 @@
          curve25519_scalarmult/2,
          curve25519_scalarmult_unrestrained/2,
          curve25519_recover_y/1,
+         curve25519_add_or_subtract/2,
          mod25519_sqrt/1
 ]).
 
@@ -42,6 +43,13 @@ curve25519_scalarmult(N, Point) ->
 %%% @end
 curve25519_recover_y(N) ->
     enacl_nif:curve25519_ext_recover_y(N).
+
+%%% @doc
+%%% Combine two points on the curve. The points must be valid and distinct.
+%%% Otherwise, returns {error, operator_failure}.
+%%% @end
+curve25519_add_or_subtract(P,Q) ->
+    enacl_nif:curve25519_ext_add_or_subtract(P,Q).
 
 %%% @doc
 %%% Given a number in the prime field (encoded as 256-bit little-endian binary), returns a square root (chosen deterministically).

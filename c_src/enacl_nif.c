@@ -859,6 +859,34 @@ ERL_NIF_TERM enif_curve25519_ext_recover_y(ErlNifEnv *env, int argc, ERL_NIF_TER
 	return enif_make_binary(env, &y);
 }
 
+extern int curve25519_add_or_subtract(unsigned char *r, const unsigned char *p, const unsigned char *q);
+
+static
+ERL_NIF_TERM enif_curve25519_ext_add_or_subtract(ErlNifEnv *env, int argc, ERL_NIF_TERM const argv[])
+{
+        ErlNifBinary p, q, r;
+
+	if (
+                (argc != 2) ||
+                (!enif_inspect_binary(env, argv[0], &p)) ||
+                (p.size != crypto_scalarmult_curve25519_BYTES) ||
+                (!enif_inspect_binary(env, argv[1], &q)) ||
+                (q.size != crypto_scalarmult_curve25519_BYTES))
+        {
+		return enif_make_badarg(env);
+	}
+
+	if (!enif_alloc_binary(crypto_scalarmult_curve25519_BYTES, &r)) {
+		return nacl_error_tuple(env, "alloc_failed");
+	}
+
+        if (curve25519_add_or_subtract(r.data, p.data, q.data) != 0) {
+                return nacl_error_tuple(env, "operator_failure");
+        }
+
+	return enif_make_binary(env, &r);
+}
+
 
 /* Tie the knot to the Erlang world */
 static ErlNifFunc nif_funcs[] = {
@@ -931,6 +959,7 @@ static ErlNifFunc nif_funcs[] = {
 
         {"mod25519_sqrt", 1, enif_mod25519_sqrt},
         {"curve25519_ext_recover_y", 1, enif_curve25519_ext_recover_y},
+        {"curve25519_ext_add_or_subtract", 2, enif_curve25519_ext_add_or_subtract},
         {"curve25519_ext_scalarmult_unrestrained", 2, enif_curve25519_ext_scalarmult_unrestrained}
 };
 

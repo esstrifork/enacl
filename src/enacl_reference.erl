@@ -11,6 +11,12 @@
 -define(CURVE_A, 486662).
 -define(CURVE_Q, ((1 bsl 253) - 5) ).
 
+dump(Msg,Num0) ->
+    Num = normalize(Num0),
+    true = (Num>=0),
+    Bin = <<Num:256/little>>,
+    io:format("ERLANG: ~s: ~p\n", [Msg, Bin]).
+
 add_or_subtract(X1, X2) ->
     Y1 = recover_y_coordinate(X1),
     Y2 = recover_y_coordinate(X2),
@@ -20,14 +26,16 @@ add_or_subtract(X1, X2) ->
     Slope = (DY * inv(DX, ?PRIME25519)) rem ?PRIME25519,
     SlopeSqr = (Slope * Slope) rem ?PRIME25519,
     X3 = (SlopeSqr - ?CURVE_A - (X1+X2)) rem ?PRIME25519,
-    %% Normalize:
-    (X3 + ?PRIME25519) rem ?PRIME25519.
+    normalize(X3).
 
 recover_y_coordinate(X) ->
     %% Curve equation: y² = x³ + Ax² + x.
     XSqr = X*X,
     YSqr = X*(XSqr + ?CURVE_A * X + 1),
     sqrt(YSqr).
+
+normalize(X) ->
+    (X + ?PRIME25519) rem ?PRIME25519.
 
 %%% Calculates a square root in the prime field. Return 0 when there is no square root.
 sqrt(X) ->

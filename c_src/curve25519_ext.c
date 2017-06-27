@@ -120,8 +120,9 @@ sv dump(const char* msg, i64* x, i64* z) {
     for (i=0; i<32; i++) printf(",%d", r[i]);
     printf("\r\n");
 }
-
-sv dump(const char* msg, gf x) {
+*/
+/*
+sv dump(const char* msg, const gf x) {
     u8 r[32];
     int i;
 
@@ -316,7 +317,6 @@ static int RECOVER_Y(gf y, const gf x) {
 
     // Compute y:
     {
-        gf y;
         int result = SQRT(y, c);
         return result;
     }
@@ -325,9 +325,61 @@ static int RECOVER_Y(gf y, const gf x) {
 /* Returns 0 on success, non-zero on non-curve-points. */
 int curve25519_recover_y(u8 *y, const u8 *x) {
     gf xx,yy;
-    int result;
+    int err;
     unpack25519(xx,x);
-    result = RECOVER_Y(yy, xx);
+    err = RECOVER_Y(yy, xx);
     pack25519(y,yy);
-    return result;
+    return err;
+}
+
+/* Returns 0 on success, non-zero on non-curve-points or identical
+ * points, in which case the returned point is also set to zero. */
+static int ADD_OR_SUBTRACT(gf result, const gf x1, const gf x2) {
+    gf y1, y2;
+    int err;
+
+    // Recover the Y coordinates:
+    err  = RECOVER_Y(y1, x1);
+    err |= RECOVER_Y(y2, x2);
+
+    // Compute the X coordinate of sum-or-difference:
+    { // Formula: x3 = [(y1-y2)/(x1-x2)]² - A - x1 - x2.
+        gf a,b;
+        Z(a, x1,x2); // dx
+        {   /* Now that we have dx, let's use it to test point
+             * identity:
+             * (Note that we can't do that on the raw inputs, because
+             * they need not be bitwise identical to be the same
+             * coordinate modulo p.) */
+            u8 dx_packed[32];
+            u8 _0[32] = {0};
+            pack25519(dx_packed, a);
+            err |= eq(dx_packed, _0);
+        }
+        inv25519(a, a);   // dx^(-1)
+        Z(b, y1,y2); // dy
+        M(b, a, b);  // dy/dx
+        S(b, b);     // (dy/dx)²
+        A(a, x1,x2);
+        A(a, a, _486662);
+        Z(result, b, a);
+    }
+    { // Error handling:
+        gf swap_zero = {0};
+        sel25519(result, swap_zero, err);
+    }
+    return err;
+}
+
+/* Returns 0 on success, non-zero on non-curve-points or identical
+ * points, in which case the returned point is also set to zero. */
+int curve25519_add_or_subtract(u8* result, const u8* x1, const u8* x2) {
+    gf xx1, xx2, rr;
+    int err;
+    err = eq(x1, x2);
+    unpack25519(xx1, x1);
+    unpack25519(xx2, x2);
+    err = ADD_OR_SUBTRACT(rr, xx1, xx2);
+    pack25519(result, rr);
+    return err;
 }
