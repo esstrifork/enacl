@@ -7,7 +7,9 @@
 
 -export([
          scramble_block_16/2,
-         curve25519_scalarmult/2
+         curve25519_scalarmult/2,
+         curve25519_scalarmult_unrestrained/2,
+         mod25519_sqrt/1
 ]).
 
 %% @doc scramble_block_16/2 scrambles (encrypt) a block under a given key
@@ -26,8 +28,18 @@ scramble_block_16(Block, Key) ->
     enacl_nif:scramble_block_16(Block, Key).
 
 %%% @doc
-%%% Multiply a point by a scalar on curve25519.
+%%% Multiply a point by a scalar on curve25519, with Diffie-Helman
+%%% appropriate masking of the scalar.
 %%% @end
 -spec curve25519_scalarmult(binary(), binary()) -> binary().
 curve25519_scalarmult(N, Point) ->
     enacl_nif:curve25519_scalarmult(N, Point).
+
+mod25519_sqrt(N) ->
+    enacl_nif:mod25519_sqrt(N).
+
+%%% @doc
+%%% Multiply a point by a scalar on curve25519, without masking of the scalar.
+%%% @end
+curve25519_scalarmult_unrestrained(N, Point) ->
+    enacl_nif:curve25519_ext_scalarmult_unrestrained(N, Point).

@@ -1,6 +1,7 @@
 /.rebar
 /ebin
 *.beam
+*.dump
 *.o
 *.d
 *.eqc
@@ -11,3 +12,8 @@
 /doc/*.png
 /doc/*.css
 /.eunit
+
+*~
+.#*
+\#*
+*.bak*

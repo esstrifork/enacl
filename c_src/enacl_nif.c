@@ -779,6 +779,61 @@ ERL_NIF_TERM enif_curve25519_scalarmult(ErlNifEnv *env, int argc, ERL_NIF_TERM c
 	return enif_make_binary(env, &r);
 }
 
+extern int curve25519_ext_scalarmult_unrestrained(unsigned char *q,const unsigned char *n,const unsigned char *p);
+
+static
+ERL_NIF_TERM enif_curve25519_ext_scalarmult_unrestrained(ErlNifEnv *env, int argc, ERL_NIF_TERM const argv[])
+{
+        ErlNifBinary n, p, r;
+
+	if (
+                (argc != 2) ||
+                (!enif_inspect_binary(env, argv[0], &n)) ||
+                (!enif_inspect_binary(env, argv[1], &p)) ||
+                (n.size != crypto_scalarmult_curve25519_SCALARBYTES) ||
+                (p.size != crypto_scalarmult_curve25519_BYTES))
+        {
+		return enif_make_badarg(env);
+	}
+
+	if (!enif_alloc_binary(p.size, &r)) {
+		return nacl_error_tuple(env, "alloc_failed");
+	}
+
+        if (curve25519_ext_scalarmult_unrestrained(r.data, n.data, p.data) != 0) {
+            return enif_make_badarg(env);
+        }
+
+	return enif_make_binary(env, &r);
+}
+
+extern int mod25519_sqrt(unsigned char *sqrt_x, const unsigned char *x);
+
+static
+ERL_NIF_TERM enif_mod25519_sqrt(ErlNifEnv *env, int argc, ERL_NIF_TERM const argv[])
+{
+        ErlNifBinary n, r;
+
+	if (
+                (argc != 1) ||
+                (!enif_inspect_binary(env, argv[0], &n)) ||
+                (n.size != crypto_scalarmult_curve25519_SCALARBYTES))
+        {
+		return enif_make_badarg(env);
+	}
+
+	if (!enif_alloc_binary(n.size, &r)) {
+		return nacl_error_tuple(env, "alloc_failed");
+	}
+
+        if (mod25519_sqrt(r.data, n.data) != 0) {
+                return nacl_error_tuple(env, "no_sqrt");
+        }
+
+	return enif_make_binary(env, &r);
+}
+
+
 /* Tie the knot to the Erlang world */
 static ErlNifFunc nif_funcs[] = {
 	{"crypto_box_NONCEBYTES", 0, enif_crypto_box_NONCEBYTES},
@@ -846,7 +901,10 @@ static ErlNifFunc nif_funcs[] = {
 	
 	{"scramble_block_16", 2, enif_scramble_block_16},
 
-        {"curve25519_scalarmult", 2, enif_curve25519_scalarmult}
+        {"curve25519_scalarmult", 2, enif_curve25519_scalarmult},
+
+        {"mod25519_sqrt", 1, enif_mod25519_sqrt},
+        {"curve25519_ext_scalarmult_unrestrained", 2, enif_curve25519_ext_scalarmult_unrestrained},
 };
 
 
