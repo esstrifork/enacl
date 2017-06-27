@@ -332,15 +332,25 @@ int curve25519_recover_y(u8 *y, const u8 *x) {
     return err;
 }
 
-/* Returns 0 on success, non-zero on non-curve-points or identical
- * points, in which case the returned point is also set to zero. */
+/* Returns 0 on success; 1 on non-curve-points, identical
+ * points or X=zero, in which case the returned point is also set to zero. */
 static int ADD_OR_SUBTRACT(gf result, const gf x1, const gf x2) {
     gf y1, y2;
     int err;
+    const u8 _0[32] = {0};
 
     // Recover the Y coordinates:
     err  = RECOVER_Y(y1, x1);
     err |= RECOVER_Y(y2, x2);
+
+    // Check X against zero:
+    {
+        u8 x_packed[32];
+        pack25519(x_packed, x1);
+        err |= eq(x_packed, _0);
+        pack25519(x_packed, x2);
+        err |= eq(x_packed, _0);
+    }
 
     // Compute the X coordinate of sum-or-difference:
     { // Formula: x3 = [(y1-y2)/(x1-x2)]² - A - x1 - x2.
@@ -352,7 +362,6 @@ static int ADD_OR_SUBTRACT(gf result, const gf x1, const gf x2) {
              * they need not be bitwise identical to be the same
              * coordinate modulo p.) */
             u8 dx_packed[32];
-            u8 _0[32] = {0};
             pack25519(dx_packed, a);
             err |= eq(dx_packed, _0);
         }
@@ -371,8 +380,8 @@ static int ADD_OR_SUBTRACT(gf result, const gf x1, const gf x2) {
     return err;
 }
 
-/* Returns 0 on success, non-zero on non-curve-points or identical
- * points, in which case the returned point is also set to zero. */
+/* Returns 0 on success; 1 on non-curve-points, identical
+ * points or X=zero, in which case the returned point is also set to zero. */
 int curve25519_add_or_subtract(u8* result, const u8* x1, const u8* x2) {
     gf xx1, xx2, rr;
     int err;

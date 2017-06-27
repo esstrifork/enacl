@@ -212,11 +212,7 @@ add_or_subtract_works(N,M) ->
 
     ?assert(X == CalcXForScalar((M+N) rem ?CURVE_ORDER)
             orelse
-            X == CalcXForScalar(abs(M-N))
-            %% X == CalcXForScalar((M-N+?CURVE_ORDER) rem ?CURVE_ORDER)
-            %% orelse
-            %% X == CalcXForScalar((N-M+?CURVE_ORDER) rem ?CURVE_ORDER)
-            ).
+            X == CalcXForScalar(abs(M-N))).
 
 
 rand_scalar() ->
