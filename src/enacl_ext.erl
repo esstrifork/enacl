@@ -9,6 +9,7 @@
          scramble_block_16/2,
          curve25519_scalarmult/2,
          curve25519_scalarmult_unrestrained/2,
+         curve25519_recover_y/1,
          mod25519_sqrt/1
 ]).
 
@@ -35,6 +36,17 @@ scramble_block_16(Block, Key) ->
 curve25519_scalarmult(N, Point) ->
     enacl_nif:curve25519_scalarmult(N, Point).
 
+%%% @doc
+%%% Given the X coordinate of a point on the curve, returns one of the two corresponding Y values (deterministically).
+%%% Otherwise, returns {error, not_on_curve}.
+%%% @end
+curve25519_recover_y(N) ->
+    enacl_nif:curve25519_ext_recover_y(N).
+
+%%% @doc
+%%% Given a number in the prime field (encoded as 256-bit little-endian binary), returns a square root (chosen deterministically).
+%%% If no square root exists, returns {error, no_sqrt}.
+%%% @end
 mod25519_sqrt(N) ->
     enacl_nif:mod25519_sqrt(N).
 

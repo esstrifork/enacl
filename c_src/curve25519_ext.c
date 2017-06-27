@@ -8,6 +8,7 @@ typedef long long i64;
 typedef i64 gf[16];
 
 static const gf _121665 = {0xDB41,1};
+static const gf _486662 = {0X6D06, 7};
 
 sv car25519(gf o)
 {
@@ -262,17 +263,16 @@ static int eq(const u8* a, const u8* b)
     return (~neq)&1;
 }
 
-int mod25519_sqrt(u8 *sqrt_x, const u8 *x) {
-    //     SqrtExp = (?CURVE_Q+1) div 2,
+/* Returns 0 on success. */
+static int SQRT(gf sqrt_x, const gf x) {
+    // SqrtExp = (?CURVE_Q+1) div 2,
     // SqrtCand = powmod(X, SqrtExp, ?PRIME25519),
     // Check = powmod(X, ?CURVE_Q, ?PRIME25519),
     // InvDivisor = sqrt_divisor(Check),
     // (InvDivisor * SqrtCand) rem ?PRIME25519.
     int i;
     gf r,t;
-    gf a;
-    unpack25519(a,x);
-    sqrt_exps(r, t, a);
+    sqrt_exps(r, t, x);
 
     int good = 0;
     {
@@ -288,13 +288,46 @@ int mod25519_sqrt(u8 *sqrt_x, const u8 *x) {
             sel25519(b_inv, cand_inv, match);
             good |= match;
         }
-        M(r, r, b_inv);
+        M(sqrt_x, r, b_inv);
     }
-    pack25519(sqrt_x, r);
     return !good;
 }
 
-/*
-int curve25519_recover_y(const u8 *y, const u8 *x) {
+/* Returns 0 on success. */
+int mod25519_sqrt(u8 *sqrt_x, const u8 *x) {
+    int result;
+    gf a,b;
+    unpack25519(a,x);
+    result = SQRT(b, a);
+    pack25519(sqrt_x, b);
+    return result;
 }
-*/
+
+/* Returns 0 on success, non-zero on non-curve-points. */
+static int RECOVER_Y(gf y, const gf x) {
+    gf a,b;
+    gf c = {1};
+    // Compute y²:
+    M(a,x,x);
+    M(b, _486662, x); // Ax
+    A(c, c, a); // 1+x²
+    A(c, c, b); // 1+x²+Ax
+    M(c, c, x);    // x³+Ax²+x
+
+    // Compute y:
+    {
+        gf y;
+        int result = SQRT(y, c);
+        return result;
+    }
+}
+
+/* Returns 0 on success, non-zero on non-curve-points. */
+int curve25519_recover_y(u8 *y, const u8 *x) {
+    gf xx,yy;
+    int result;
+    unpack25519(xx,x);
+    result = RECOVER_Y(yy, xx);
+    pack25519(y,yy);
+    return result;
+}
