@@ -11,3 +11,8 @@ deps:
 .PHONY: clean
 clean:
 	$(REBAR) clean
+
+.PHONY: test
+test:
+	$(REBAR) eunit
+
