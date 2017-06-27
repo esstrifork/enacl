@@ -138,3 +138,30 @@ rand_scalar() ->
     <<X:256/little>> = crypto:rand_bytes(32),
     X rem ?PRIME25519.
 
+
+timing_test() ->
+    P1 = wrap(9),
+    P2 = enacl_ext:curve25519_scalarmult_unrestrained(wrap(123), P1),
+    report_time("scalarmult", fun() -> enacl_ext:curve25519_scalarmult(P1,P2) end,
+                1000),
+    report_time("scalarmult_unrestrained", fun() -> enacl_ext:curve25519_scalarmult_unrestrained(P1,P2) end,
+                100),
+    report_time("add_or_subtract", fun() -> enacl_ext:curve25519_add_or_subtract(P1,P2) end,
+                1000),
+    report_time("sqrt", fun() -> enacl_ext:mod25519_sqrt(P1) end,
+                1000),
+    report_time("recover_y", fun() -> enacl_ext:curve25519_recover_y(P2) end,
+                1000),
+    ok.
+
+report_time(Msg, Fun, Iterations) when is_integer(Iterations) ->
+    {T, _} = timer:tc(fun() -> timer_loop(Iterations, Fun) end),
+    Seconds = (T*1.0e-6) / Iterations,
+    Millis = Seconds*1.0e3,
+    io:format(user, "Time for ~-30s: ~8.3f ms (average over ~b rounds)\n",
+              [Msg, Millis, Iterations]).
+
+timer_loop(0, _) -> ok;
+timer_loop(I, Fun) ->
+    Fun(),
+    timer_loop(I-1, Fun).
